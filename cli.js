@@ -9,7 +9,7 @@ if (!argv.url) {
     ${chalk.red("缺少url参数")}
 
     ${chalk.bold("用法：")} ${chalk.green(
-    "reg --url=https://qiniu.chenng.cn/2018-12-09-15-21-29.png"
+    `recognition.exe --lan="chi_sim" --url="https://xxxx.png"`
   )}
   `);
 

@@ -1,3 +1,5 @@
+// https://www.chenng.cn/post/Node-command-line-tool-production.html
+
 const fs = require("fs");
 const path = require("path");
 const { promisify } = require("util");
@@ -5,6 +7,7 @@ const chalk = require("chalk");
 const axios = require("axios");
 const images = require("images");
 const Tesseract = require("tesseract.js");
+const mimeType = require("mime-types");
 const fsState = promisify(fs.stat);
 const fsUnlink = promisify(fs.unlink);
 
@@ -12,8 +15,17 @@ class Recognize {
   constructor(url, lan = "chi_sim") {
     this.imageUrl = url;
     this.lan = lan;
-    this.downloadDir = `${__dirname}/download`;
-    this.downloadFile = `${__dirname}/download/temp.png`;
+    // this.downloadDir = `${__dirname}/download`;
+    // this.downloadFile = `${__dirname}/download/temp.png`;
+
+    this.downloadDir = path.resolve(process.cwd(), "./download");
+    this.downloadFile = path.resolve(process.cwd(), "./download/temp.png");
+
+    // this.downloadDir = require(process.cwd() + "\\download");
+    // this.downloadFile = require(process.cwd() + "\\download\\temp.png");
+
+    // this.downloadDir = `./download`;
+    // this.downloadFile = `./download/temp.png`;
 
     try {
       this.start(url);
@@ -127,6 +139,14 @@ class Recognize {
         "文字识别开始，请耐心等待(首次使用会加载语言信息,时间稍长)..."
       )
     );
+
+    console.log("this.downloadFile==>", this.downloadFile);
+    // const fileMimeType = mimeType.lookup(this.downloadFile);
+    // const imageData = fs.readFileSync(this.downloadFile); // 例：fileUrl="D:\\test\\test.bmp"
+    // const imageBase64 = imageData.toString("base64");
+    // let base64 = "data:" + fileMimeType + ";base64," + imageBase64;
+
+    // console.log("base64==>", base64);
 
     const worker = createWorker({
       logger: (m) => {

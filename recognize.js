@@ -11,15 +11,28 @@ const mimeType = require("mime-types");
 const fsState = promisify(fs.stat);
 const fsUnlink = promisify(fs.unlink);
 
+/**
+ * 文字识别
+ * @param {String} url 图片路径
+ * @param {Boolean} isLocalUrl 是否是本地路径
+ * @param {String} lan 识别字体选择
+ * @param {Boolean} isPkg 是否为打包后的客户端操作
+ */
 class Recognize {
-  constructor(url, lan = "chi_sim") {
+  constructor(url, isLocalUrl = false, lan = "chi_sim+eng", isPkg = false) {
     this.imageUrl = url;
+    this.isLocalUrl = isLocalUrl;
     this.lan = lan;
-    // this.downloadDir = `${__dirname}/download`;
-    // this.downloadFile = `${__dirname}/download/temp.png`;
+    this.isPkg = isPkg;
+    this.downloadDir = isPkg
+      ? path.resolve(process.cwd(), "./download")
+      : `${__dirname}/download`;
+    this.downloadFile = isPkg
+      ? path.resolve(process.cwd(), "./download/temp.png")
+      : `${__dirname}/download/temp.png`;
 
-    this.downloadDir = path.resolve(process.cwd(), "./download");
-    this.downloadFile = path.resolve(process.cwd(), "./download/temp.png");
+    // this.downloadDir = path.resolve(process.cwd(), "./download");
+    // this.downloadFile = path.resolve(process.cwd(), "./download/temp.png");
 
     // this.downloadDir = require(process.cwd() + "\\download");
     // this.downloadFile = require(process.cwd() + "\\download\\temp.png");
@@ -35,6 +48,18 @@ class Recognize {
   }
 
   async start(url) {
+    // 如果是本地图片路径，则直接进行识别
+    if (this.isLocalUrl) {
+      this.downloadFile = this.isPkg
+        ? path.resolve(process.cwd(), this.imageUrl)
+        : `${__dirname}/download/${this.imageUrl}`;
+
+      const result = await this.handleTesseractImg();
+      console.log(`${chalk.cyanBright(result)}`);
+
+      return;
+    }
+
     const [beforeError, beforeData] = await this.beforeStart()
       .then((a) => [null, a])
       .catch((e) => [e, null]);
@@ -44,14 +69,31 @@ class Recognize {
     const [error, data] = await this.downloadImg(url)
       .then((a) => [null, a])
       .catch((e) => [e, null]);
+
     if (data) {
       await this.recognizeImage();
       const result = await this.handleTesseractImg();
+
+      fs.writeFile(
+        `${this.downloadDir}/result.txt`,
+        result,
+        { encoding: 'utf8'},
+        (error) => {
+          if (error)
+            return console.log(
+              chalk.redBright("写入文件失败：" + error.message)
+            );
+
+          console.log(chalk.greenBright("文件写入成功"));
+        }
+      );
+
       console.log(`${chalk.cyanBright(result)}`);
     }
   }
 
   async beforeStart() {
+    // 查看文件是否存在
     const [fileStateError, fileStateData] = await fsState(this.downloadFile)
       .then((data) => [null, data])
       .catch((error) => [error, null]);
@@ -59,6 +101,7 @@ class Recognize {
     // if (fileStateError)
     //   return console.log(chalk.red("异常错误，请重新打开:", fileStateError));
 
+    // 如果文件存在则进行删除
     if (fileStateData) {
       const [fileUnlinkError, fileUnlinkData] = await fsUnlink(
         this.downloadFile
@@ -74,6 +117,7 @@ class Recognize {
       console.log(chalk.green("删除旧文件成功"));
     }
 
+    // 如果文件夹不存在，则穿件文件夹
     if (!fs.existsSync(this.downloadDir)) {
       fs.mkdirSync(this.downloadDir);
 
@@ -126,8 +170,11 @@ class Recognize {
 
   // 放大图片，并覆盖源文件
   async recognizeImage() {
-    images(this.downloadFile).size(400).save(this.downloadFile);
-    console.log(chalk.green("图片缩放成功"));
+    const { width, height } = images(this.downloadFile).size();
+    if (width < 500 && height < 500) {
+      images(this.downloadFile).size(450).save(this.downloadFile);
+      console.log(chalk.green("图片缩放成功"));
+    }
   }
 
   // 识别图片中的文字
@@ -140,7 +187,6 @@ class Recognize {
       )
     );
 
-    console.log("this.downloadFile==>", this.downloadFile);
     // const fileMimeType = mimeType.lookup(this.downloadFile);
     // const imageData = fs.readFileSync(this.downloadFile); // 例：fileUrl="D:\\test\\test.bmp"
     // const imageBase64 = imageData.toString("base64");

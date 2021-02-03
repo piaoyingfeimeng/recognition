@@ -8,7 +8,7 @@ node cli.js --url="http//xxxxxx.jpg"
 ```
 2. 识别本地图片
 ```shell
-node cli.js --url="http//xxxxxx.jpg" --isLocalUrl=true
+node cli.js --url="xxxxxx.jpg" --isLocalUrl=true
 ```
 ### 2. 打包成pkg使用
 1. 识别网络图片
@@ -17,7 +17,7 @@ recognition.exe --url="http//xxxxxx.jpg" --isPkg=true
 ```
 2. 识别本地图片
 ```shell
-recognition.exe --url="http//xxxxxx.jpg" --isLocalUrl=true --isPkg=true
+recognition.exe --url="xxxxxx.jpg" --isLocalUrl=true --isPkg=true
 ```
 
 ### 3. 遗留的问题
